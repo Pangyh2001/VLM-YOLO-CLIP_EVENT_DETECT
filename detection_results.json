@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "total_frames": 150,
-    "processed_frames": 149,
+    "total_frames": 300,
+    "processed_frames": 299,
     "events_config": [
       {
         "name": "进门出门",
@@ -61,5 +61,22 @@
       }
     ]
   },
-  "results": []
+  "results": [
+    {
+      "event_name": "聚餐",
+      "start_time": 1.1344666666666667,
+      "end_time": 2.5025,
+      "status": "completed",
+      "vlm_reason": "是\n\n这些图像显示了一群人围坐在餐桌旁，每个人面前都有一盘食物和一杯饮料，这表明他们正在一起用餐。",
+      "duration": 1.3680333333333332
+    },
+    {
+      "event_name": "聚餐",
+      "start_time": 4.270933333333334,
+      "end_time": 4.671333333333333,
+      "status": "completed",
+      "vlm_reason": "是\n\n这些图像显示了一张餐桌，上面摆放着各种食物和餐具，表明人们可能正在聚餐。虽然我们看不到人，但根据餐桌上的布置可以推断出他们可能正在一起用餐。",
+      "duration": 0.4003999999999994
+    }
+  ]
 }

@@ -163,7 +163,9 @@ class EventDetector:
             detected_entities = set(det['class'] for det in detections)
             required_entities = set(event['entities'])
             
-            if not required_entities.issubset(detected_entities):
+            # 宽松模式：只要检测到了任意一个相关实体，就放行
+            # isdisjoint() 如果交集为空返回 True，所以这里的意思是“如果一个重合的都没有，才跳过”
+            if required_entities.isdisjoint(detected_entities):
                 event_scores[event_name] = 0.0
                 continue
             
@@ -198,7 +200,17 @@ class EventDetector:
             
             # 最终分数：正面分数减去负面分数
             final_score = pos_score - max_neg_score
-            event_scores[event_name] = final_score
+            event_scores[event_name] = max(0.0, final_score)
+            
+            
+            
+            # --- 【新增】保存 CLIP 看到的裁剪图 ---
+            # 只有当分数超过一定阈值（比如认为可能是事件）时才保存，节省磁盘
+            if final_score > 0.1: 
+                self.logger.log_event_crop(cropped, event_name, final_score, self.frame_count)
+            # -----------------------------------
+            
+            
             
             # Step 4: 更新事件状态
             is_highest = final_score == max(event_scores.values())

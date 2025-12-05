@@ -3,6 +3,7 @@ import numpy as np
 from PIL import Image
 from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
 from ultralytics import YOLOWorld
+import cv2
 try:
     import clip
     USE_OPENAI_CLIP = True
@@ -131,6 +132,11 @@ class ModelManager:
         """
         计算图像与文本的 CLIP 相似度
         """
+        # --- 【新增】颜色空间转换 BGR -> RGB ---
+        # OpenCV 读入的是 BGR，CLIP 需要 RGB
+        if len(image.shape) == 3 and image.shape[2] == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        # -------------------------------------
         # 转换为 PIL Image
         pil_image = Image.fromarray(image)
         

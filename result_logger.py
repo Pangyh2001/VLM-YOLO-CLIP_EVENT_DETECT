@@ -312,6 +312,21 @@ class DetailedLogger:
         plot_path = os.path.join(self.summary_dir, 'clip_scores_timeline.png')
         plt.savefig(plot_path, dpi=150)
         plt.close()
+    def log_event_crop(self, crop_img: np.ndarray, event_name: str, score: float, frame_idx: int):
+        """记录送给 CLIP 的裁剪图"""
+        if not self.enabled or not self.save_clip:
+            return
+
+        # 创建专门存放裁剪图的文件夹
+        crop_dir = os.path.join(self.session_dir, '4_clip_crops', event_name)
+        os.makedirs(crop_dir, exist_ok=True)
+        
+        # 文件名带上分数，方便分析
+        filename = f"frame_{frame_idx:06d}_score_{score:.3f}.jpg"
+        filepath = os.path.join(crop_dir, filename)
+        
+        # 这里的 crop_img 是 BGR 格式的 (因为是在转 RGB 之前传进来的)，可以直接保存
+        cv2.imwrite(filepath, crop_img)
     
     def _generate_overview(self):
         """生成总览文档"""

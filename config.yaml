@@ -1,0 +1,92 @@
+# 事件检测配置文件
+
+# 模型路径配置
+models:
+  vlm_path: "/data2/pyh/model_weights/qwen25vl_7b"
+  yolo_model: "yolov8s-worldv2"  # 会自动下载到 ./models/
+  clip_model: "ViT-B/32"  # 可选: ViT-B/32, ViT-B/16, ViT-L/14, RN50, RN101
+  
+# 视频处理配置
+video:
+  base_fps: 5           # 基础帧率
+  active_fps: 10        # 检测到实体时的帧率
+  no_detection_frames: 20  # 连续N帧未检测到则降回base_fps
+  
+# 事件检测配置
+detection:
+  clip_consecutive_frames: 5  # CLIP连续N帧高分才触发
+  event_start_frames: 3       # 连续N帧确认事件开始
+  event_end_frames: 10        # 连续N帧低分确认事件结束
+  
+# 切图策略配置
+cropping:
+  interaction_expand: 1.1   # 互动类事件框扩展比例
+  single_expand: 1.2        # 单人动作框扩展比例
+  scene_expand: 1.3         # 场景类事件框扩展比例
+
+# VLM 线程池配置
+vlm:
+  max_workers: 3
+  queue_size: 50
+
+# 输出配置
+output:
+  save_json: true
+  json_path: "./detection_results.json"
+  save_event_images: true
+  event_images_dir: "./event_images"
+  
+  # 详细记录配置
+  detailed_logging: true
+  output_base_dir: "./output"  # 基础输出目录
+  save_yolo_detections: true   # 保存YOLO检测结果图像
+  save_clip_scores: true        # 保存CLIP相似度得分
+  save_vlm_results: true        # 保存VLM验证结果
+  yolo_sample_rate: 30          # YOLO检测图像采样率（每N帧保存一次）
+  clip_sample_rate: 10          # CLIP得分采样率（每N帧保存一次）
+
+# 事件类型定义
+events:
+  - name: "进门出门"
+    type: "location"  # location: 位置关系, interaction: 互动, scene: 场景, single: 单人动作
+    entities:
+      - "person"
+      - "door"
+    positive_desc: "一个人正在穿过门口"
+    negative_descs:
+      - "一个人站在门边不动"
+      - "一扇关闭的门"
+      - "空荡荡的门口"
+    
+  - name: "逗猫"
+    type: "interaction"
+    entities:
+      - "person"
+      - "cat"
+    positive_desc: "一个人正在与猫互动玩耍"
+    negative_descs:
+      - "一个人只是看着猫"
+      - "猫独自待着"
+      - "人和猫在同一空间但没有互动"
+      
+  - name: "聚餐"
+    type: "scene"
+    entities:
+      - "person"
+      - "dining table"
+      - "food"
+    positive_desc: "人们围坐在餐桌旁一起用餐"
+    negative_descs:
+      - "人们坐在桌边但没有食物"
+      - "空的餐桌"
+      - "一个人独自坐在桌边玩手机"
+      
+  - name: "跌倒"
+    type: "single"
+    entities:
+      - "person"
+    positive_desc: "一个人跌倒在地上"
+    negative_descs:
+      - "一个人正常站立"
+      - "一个人正常走路"
+      - "一个人坐着或蹲着"

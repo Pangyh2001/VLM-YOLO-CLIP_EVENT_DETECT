@@ -1,0 +1,20 @@
+torch>=2.0.0
+torchvision>=0.15.0
+transformers>=4.37.0
+qwen-vl-utils
+ultralytics>=8.1.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+Pillow>=10.0.0
+ftfy
+regex
+pyyaml
+av>=11.0.0
+matplotlib>=3.5.0
+
+# CLIP 安装（二选一）
+# 方法1: OpenAI CLIP (推荐，需要 git)
+# pip install git+https://github.com/openai/CLIP.git
+
+# 方法2: Open CLIP (备选方案，不需要 git)
+# open-clip-torch>=2.20.0

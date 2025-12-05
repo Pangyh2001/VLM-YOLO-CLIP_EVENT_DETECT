@@ -1,0 +1,4 @@
+output/*
+CLIP/*
+__pycache__
+yolov8s-worldv2.pt

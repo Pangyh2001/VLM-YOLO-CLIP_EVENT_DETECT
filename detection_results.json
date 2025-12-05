@@ -1,0 +1,65 @@
+{
+  "metadata": {
+    "total_frames": 150,
+    "processed_frames": 149,
+    "events_config": [
+      {
+        "name": "进门出门",
+        "type": "location",
+        "entities": [
+          "person",
+          "door"
+        ],
+        "positive_desc": "一个人正在穿过门口",
+        "negative_descs": [
+          "一个人站在门边不动",
+          "一扇关闭的门",
+          "空荡荡的门口"
+        ]
+      },
+      {
+        "name": "逗猫",
+        "type": "interaction",
+        "entities": [
+          "person",
+          "cat"
+        ],
+        "positive_desc": "一个人正在与猫互动玩耍",
+        "negative_descs": [
+          "一个人只是看着猫",
+          "猫独自待着",
+          "人和猫在同一空间但没有互动"
+        ]
+      },
+      {
+        "name": "聚餐",
+        "type": "scene",
+        "entities": [
+          "person",
+          "dining table",
+          "food"
+        ],
+        "positive_desc": "人们围坐在餐桌旁一起用餐",
+        "negative_descs": [
+          "人们坐在桌边但没有食物",
+          "空的餐桌",
+          "一个人独自坐在桌边玩手机"
+        ]
+      },
+      {
+        "name": "跌倒",
+        "type": "single",
+        "entities": [
+          "person"
+        ],
+        "positive_desc": "一个人跌倒在地上",
+        "negative_descs": [
+          "一个人正常站立",
+          "一个人正常走路",
+          "一个人坐着或蹲着"
+        ]
+      }
+    ]
+  },
+  "results": []
+}

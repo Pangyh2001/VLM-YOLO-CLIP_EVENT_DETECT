@@ -6,8 +6,10 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 import csv
-
-
+from PIL import Image, ImageDraw, ImageFont
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 class DetailedLogger:
     """详细记录每个模块的处理结果"""
     
@@ -55,9 +57,33 @@ class DetailedLogger:
             self.clip_csv_path = os.path.join(self.clip_dir, 'clip_scores.csv')
             self.clip_csv_file = open(self.clip_csv_path, 'w', newline='', encoding='utf-8')
             self.clip_csv_writer = None  # 将在第一次写入时初始化
-        
+        # 【新增】尝试加载中文字体，用于 PIL 绘图
+        # 请确保项目目录下有 simhei.ttf，如果没有，会回退到默认字体（可能还是乱码）
+        self.font_path = "simhei.ttf" 
+        if not os.path.exists(self.font_path):
+            # 尝试使用系统字体路径（针对 Linux/Ubuntu）
+            possible_fonts = [
+                "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
+                "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
+                "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
+            ]
+            for f in possible_fonts:
+                if os.path.exists(f):
+                    self.font_path = f
+                    break
         print(f"📁 Detailed logging enabled: {self.session_dir}")
-    
+    # 【新增】辅助函数：使用 PIL 绘制中文
+    def _draw_chinese_text(self, img_cv2, text, position, color=(255, 255, 255), text_size=20):
+        img_pil = Image.fromarray(cv2.cvtColor(img_cv2, cv2.COLOR_BGR2RGB))
+        draw = ImageDraw.Draw(img_pil)
+        
+        try:
+            font = ImageFont.truetype(self.font_path, text_size)
+        except:
+            font = ImageFont.load_default()
+            
+        draw.text(position, text, font=font, fill=color)
+        return cv2.cvtColor(np.asarray(img_pil), cv2.COLOR_RGB2BGR)
     def log_yolo_detection(self, frame: np.ndarray, detections: List[Dict], 
                           frame_time: float, frame_idx: int):
         """记录YOLO检测结果"""
@@ -120,41 +146,34 @@ class DetailedLogger:
         
         self.clip_frame_count += 1
         
-        # 记录到CSV（所有帧）
+        # CSV 记录逻辑保持不变
         row_data = {
             'frame_idx': frame_idx,
             'frame_time': frame_time,
             'num_detections': len(detections)
         }
         row_data.update(event_scores)
-        
-        # 初始化CSV writer（第一次写入时）
         if self.clip_csv_writer is None:
             fieldnames = ['frame_idx', 'frame_time', 'num_detections'] + list(event_scores.keys())
             self.clip_csv_writer = csv.DictWriter(self.clip_csv_file, fieldnames=fieldnames)
             self.clip_csv_writer.writeheader()
-        
         self.clip_csv_writer.writerow(row_data)
         self.clip_scores_data.append(row_data)
         
-        # 采样保存可视化图像
+        # 可视化绘图逻辑
         if self.clip_frame_count % self.clip_sample_rate != 0:
             return
         
-        # 创建可视化
         vis_frame = frame.copy()
         h, w = vis_frame.shape[:2]
         
-        # 创建得分面板
         panel_height = 200
         panel = np.zeros((panel_height, w, 3), dtype=np.uint8)
         panel[:] = (40, 40, 40)
         
-        # 绘制标题
         cv2.putText(panel, f"Frame {frame_idx} | Time: {frame_time:.2f}s", 
                    (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
         
-        # 绘制得分条形图
         if event_scores:
             sorted_events = sorted(event_scores.items(), key=lambda x: x[1], reverse=True)
             max_score = max(event_scores.values()) if event_scores else 1.0
@@ -167,30 +186,28 @@ class DetailedLogger:
             for i, (event_name, score) in enumerate(sorted_events):
                 y = y_start + i * (bar_height + 10)
                 
-                # 绘制得分条
+                # 绘制条形图背景和前景
                 if max_score > min_score:
                     normalized_score = (score - min_score) / (max_score - min_score)
                 else:
                     normalized_score = 0.5
                 
                 bar_len = int(bar_width * normalized_score)
-                color = (0, 255, 0) if i == 0 else (100, 100, 255)  # 最高分绿色
+                color = (0, 255, 0) if i == 0 else (100, 100, 255)
+                
                 
                 cv2.rectangle(panel, (20, y), (20 + bar_len, y + bar_height), color, -1)
                 cv2.rectangle(panel, (20, y), (20 + bar_width, y + bar_height), (150, 150, 150), 1)
                 
-                # 绘制文本
                 text = f"{event_name}: {score:.3f}"
-                cv2.putText(panel, text, (25, y + 15), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-        
-        # 拼接图像和面板
+                panel = self._draw_chinese_text(panel, text, (25, y - 2), color=(255, 255, 255), text_size=16)
+            
         combined = np.vstack([vis_frame, panel])
-        
-        # 保存图像
         filename = f"frame_{frame_idx:06d}_scores.jpg"
         filepath = os.path.join(self.clip_dir, filename)
         cv2.imwrite(filepath, combined)
+
+    
     
     def log_vlm_verification(self, event_name: str, frames: List[np.ndarray],
                            is_confirmed: bool, reason: str, start_time: float):
@@ -284,18 +301,21 @@ class DetailedLogger:
     
     def _generate_clip_summary(self):
         """生成CLIP得分统计"""
-        import matplotlib
-        matplotlib.use('Agg')
-        import matplotlib.pyplot as plt
+        # 【修改】配置 Matplotlib 中文字体
+        plt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans'] # 优先使用 SimHei
+        plt.rcParams['axes.unicode_minus'] = False # 解决负号显示问题
         
-        # 提取数据
+        # 尝试手动加载字体文件（双重保险）
+        if os.path.exists(self.font_path):
+            import matplotlib.font_manager as fm
+            my_font = fm.FontProperties(fname=self.font_path)
+        else:
+            my_font = None
+
         frame_times = [d['frame_time'] for d in self.clip_scores_data]
-        
-        # 获取所有事件名称
         event_names = [k for k in self.clip_scores_data[0].keys() 
                       if k not in ['frame_idx', 'frame_time', 'num_detections']]
         
-        # 绘制得分曲线
         plt.figure(figsize=(14, 8))
         
         for event_name in event_names:
@@ -305,7 +325,13 @@ class DetailedLogger:
         plt.xlabel('Time (seconds)', fontsize=12)
         plt.ylabel('CLIP Similarity Score', fontsize=12)
         plt.title('CLIP Similarity Scores Over Time', fontsize=14, fontweight='bold')
-        plt.legend(loc='best', fontsize=10)
+        
+        # 使用自定义字体
+        if my_font:
+            plt.legend(loc='best', fontsize=10, prop=my_font)
+        else:
+            plt.legend(loc='best', fontsize=10)
+            
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
         

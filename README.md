@@ -88,7 +88,7 @@ output:
 ### 1. 本地视频文件
 
 ```bash
-python run_detection.py --source /path/to/video.mp4
+python run_detection.py --source /data2/pyh/video_stream_event_detection/zhongjifangan/dataset/PxTAy6kI9c4_000370_000380.mp4
 ```
 
 ### 2. 本地视频 + 实时显示
@@ -308,6 +308,12 @@ class MyCustomSource:
 ### 自定义切图策略
 
 在 `event_processor.py` 的 `crop_image_by_event` 方法中添加新的类型。
+
+### 批量评估视频
+
+evaluate.py文件
+
+
 
 ### 集成其他 VLM
 

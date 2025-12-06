@@ -153,8 +153,10 @@ class EventDetector:
                 'processing_time': time.time() - start_time
             }
         
-        # Step 2: 对每个事件进行处理
+        # Step 2: 第一轮循环 - 计算所有事件的分数和裁剪图
+        # 【关键修复】必须先算完所有分，才能知道谁是真正的最高分
         event_scores = {}
+        event_crops = {}  # 临时存一下裁好的图，后面要用
         
         for event in self.config['events']:
             event_name = event['name']
@@ -163,8 +165,8 @@ class EventDetector:
             detected_entities = set(det['class'] for det in detections)
             required_entities = set(event['entities'])
             
-            # 宽松模式：只要检测到了任意一个相关实体，就放行
-            # isdisjoint() 如果交集为空返回 True，所以这里的意思是“如果一个重合的都没有，才跳过”
+            # 【修复】宽松模式：只要检测到了任意一个相关实体，就放行
+            # isdisjoint 返回 True 表示交集为空，所以这里是“如果完全没交集才跳过”
             if required_entities.isdisjoint(detected_entities):
                 event_scores[event_name] = 0.0
                 continue
@@ -172,8 +174,7 @@ class EventDetector:
             # 特殊处理位置关系事件
             if event['type'] == 'location':
                 if self.event_processor.check_location_event(detections, event):
-                    # 对于位置事件，直接用原图计算 CLIP
-                    cropped = frame
+                    cropped = frame # 对于位置事件，直接用原图
                 else:
                     event_scores[event_name] = 0.0
                     continue
@@ -185,38 +186,50 @@ class EventDetector:
                     event_scores[event_name] = 0.0
                     continue
             
-            # Step 3: CLIP 计算相似度
-            # 与正面描述对比
+            # CLIP 计算相似度
+            # 【修复】只使用正面分数，避免负样本抵消导致 0 分
             pos_score = self.model_manager.compute_clip_similarity(
                 cropped, event['positive_desc']
             )
             
-            # 与负面描述对比（取最大值）
-            neg_scores = [
-                self.model_manager.compute_clip_similarity(cropped, neg_desc)
-                for neg_desc in event['negative_descs']
-            ]
-            max_neg_score = max(neg_scores) if neg_scores else 0.0
+            final_score = pos_score
             
-            # 最终分数：正面分数减去负面分数
-            final_score = pos_score - max_neg_score
+            # 存入字典
             event_scores[event_name] = max(0.0, final_score)
+            if cropped is not None:
+                event_crops[event_name] = cropped
             
-            
-            
-            # --- 【新增】保存 CLIP 看到的裁剪图 ---
-            # 只有当分数超过一定阈值（比如认为可能是事件）时才保存，节省磁盘
-            if final_score > 0.1: 
+            # 保存 CLIP 看到的图 (方便调试)
+            if final_score > 0.1 and cropped is not None:
                 self.logger.log_event_crop(cropped, event_name, final_score, self.frame_count)
-            # -----------------------------------
+
+        # -------------------------------------------------------
+        # Step 3: 计算全局最高分 & 判定胜者
+        # -------------------------------------------------------
+        current_max_score = max(event_scores.values()) if event_scores else 0.0
+        
+        # 【关键】设置底线阈值，防止低分噪声触发
+        # 只有超过这个分数的事件才有资格去竞争“最高分”
+        # 你可以根据实际情况微调这个值，0.22 是比较稳健的经验值
+        MIN_SCORE_THRESHOLD = 0.22  
+        
+        # Step 4: 第二轮循环 - 更新所有事件的状态
+        for event in self.config['events']:
+            event_name = event['name']
+            score = event_scores.get(event_name, 0.0)
+            cropped = event_crops.get(event_name, None)
             
+            # 判定是否为“赢家”：
+            # 1. 分数必须是全场最高
+            # 2. 分数必须大于底线 (0.22)
+            # 3. 分数不能是 0
+            is_winner = (score == current_max_score) and \
+                        (score > MIN_SCORE_THRESHOLD) and \
+                        (score > 0)
             
-            
-            # Step 4: 更新事件状态
-            is_highest = final_score == max(event_scores.values())
-            
+            # 更新状态机
             trigger_type, trigger_data = self.event_tracker.update_event(
-                event_name, is_highest, final_score, frame_time, cropped
+                event_name, is_winner, score, frame_time, cropped
             )
             
             # 处理触发
@@ -280,10 +293,16 @@ class EventDetector:
               f"Rejected: {vlm_stats['rejected_events']}")
         print()
     
-    def save_results(self):
+    def save_results(self, output_path=None):  # <--- 修改这里
         """保存检测结果到 JSON"""
         if not self.save_json:
             return
+        
+        # 如果传入了新路径就用新的，否则用配置文件的默认路径
+        target_path = output_path if output_path is not None else self.json_path
+        
+        # 确保目录存在
+        os.makedirs(os.path.dirname(target_path), exist_ok=True)
         
         output = {
             'metadata': {
@@ -294,15 +313,19 @@ class EventDetector:
             'results': self.detection_results
         }
         
-        with open(self.json_path, 'w', encoding='utf-8') as f:
+        with open(target_path, 'w', encoding='utf-8') as f:
             json.dump(output, f, indent=2, ensure_ascii=False)
         
-        print(f"💾 Results saved to {self.json_path}")
+        print(f"💾 Results saved to {target_path}")
     
-    def stop(self):
+    def stop(self, should_save=True):  # <--- 1. 增加参数，默认保持 True 以兼容 run_detection.py
         """停止检测器"""
         print("\n🛑 Stopping Event Detector...")
         self.vlm_pool.stop()
         self.logger.close()
-        self.save_results()
+        
+        # 2. 根据参数决定是否保存
+        if should_save:
+            self.save_results()
+            
         print("✅ Event Detector stopped")

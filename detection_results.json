@@ -4,79 +4,181 @@
     "processed_frames": 299,
     "events_config": [
       {
-        "name": "进门出门",
+        "name": "Entering Exiting",
         "type": "location",
         "entities": [
           "person",
           "door"
         ],
-        "positive_desc": "一个人正在穿过门口",
+        "positive_desc": "A person walking through a doorway, entering or exiting a room",
         "negative_descs": [
-          "一个人站在门边不动",
-          "一扇关闭的门",
-          "空荡荡的门口"
+          "A person standing still near a door",
+          "A closed door with no one",
+          "An empty doorway"
         ]
       },
       {
-        "name": "逗猫",
+        "name": "Petting Cat",
         "type": "interaction",
         "entities": [
           "person",
           "cat"
         ],
-        "positive_desc": "一个人正在与猫互动玩耍",
+        "positive_desc": "A person petting, touching, or playing with a cat",
         "negative_descs": [
-          "一个人只是看着猫",
-          "猫独自待着",
-          "人和猫在同一空间但没有互动"
+          "A person just looking at a cat",
+          "A cat sitting alone",
+          "A person and a cat in the same room but not interacting"
         ]
       },
       {
-        "name": "聚餐",
+        "name": "Petting Animal",
+        "type": "interaction",
+        "entities": [
+          "person",
+          "dog",
+          "animal"
+        ],
+        "positive_desc": "A person petting or touching an animal (like a dog)",
+        "negative_descs": [
+          "A person standing near an animal without touching",
+          "An animal running alone"
+        ]
+      },
+      {
+        "name": "Carrying Baby",
+        "type": "interaction",
+        "entities": [
+          "person"
+        ],
+        "positive_desc": "A person holding or carrying a baby in their arms",
+        "negative_descs": [
+          "A person walking next to a stroller",
+          "A baby lying alone",
+          "A person holding a bag"
+        ]
+      },
+      {
+        "name": "Walking Dog",
+        "type": "interaction",
+        "entities": [
+          "person",
+          "dog"
+        ],
+        "positive_desc": "A person walking a dog on a leash",
+        "negative_descs": [
+          "A dog running loose",
+          "A person and a dog standing still",
+          "A person carrying a dog"
+        ]
+      },
+      {
+        "name": "Falling",
+        "type": "single",
+        "entities": [
+          "person"
+        ],
+        "positive_desc": "A person falling down, lying on the floor, or tripping",
+        "negative_descs": [
+          "A person standing normally",
+          "A person walking normally",
+          "A person sitting on a chair",
+          "A person squatting"
+        ]
+      },
+      {
+        "name": "Baby Crawling",
+        "type": "single",
+        "entities": [
+          "person"
+        ],
+        "positive_desc": "A baby crawling on hands and knees on the floor",
+        "negative_descs": [
+          "A baby lying still",
+          "A baby sitting",
+          "A person walking"
+        ]
+      },
+      {
+        "name": "Clapping",
+        "type": "single",
+        "entities": [
+          "person"
+        ],
+        "positive_desc": "A person clapping their hands",
+        "negative_descs": [
+          "A person waving hands",
+          "A person with hands down",
+          "A person raising hands"
+        ]
+      },
+      {
+        "name": "Waving",
+        "type": "single",
+        "entities": [
+          "person"
+        ],
+        "positive_desc": "A person waving their hand to say hello or goodbye",
+        "negative_descs": [
+          "A person clapping",
+          "A person touching their head",
+          "A person with hands by their side"
+        ]
+      },
+      {
+        "name": "Dining",
         "type": "scene",
         "entities": [
           "person",
           "dining table",
           "food"
         ],
-        "positive_desc": "人们围坐在餐桌旁一起用餐",
+        "positive_desc": "A group of people sitting around a dining table eating food",
         "negative_descs": [
-          "人们坐在桌边但没有食物",
-          "空的餐桌",
-          "一个人独自坐在桌边玩手机"
+          "People sitting at a table with no food",
+          "An empty dining table",
+          "A person sitting alone looking at a phone"
         ]
       },
       {
-        "name": "跌倒",
-        "type": "single",
+        "name": "Eating Cake",
+        "type": "scene",
         "entities": [
-          "person"
+          "person",
+          "cake",
+          "food"
         ],
-        "positive_desc": "一个人跌倒在地上",
+        "positive_desc": "A person eating cake",
         "negative_descs": [
-          "一个人正常站立",
-          "一个人正常走路",
-          "一个人坐着或蹲着"
+          "A cake on a table with no one eating",
+          "A person just looking at a cake"
         ]
       }
     ]
   },
   "results": [
     {
-      "event_name": "聚餐",
-      "start_time": 1.1344666666666667,
-      "end_time": 2.5025,
+      "event_name": "Dining",
+      "start_time": 0.33366666666666667,
+      "end_time": 1.9019,
       "status": "completed",
-      "vlm_reason": "是\n\n这些图像显示了一群人围坐在餐桌旁，每个人面前都有一盘食物和一杯饮料，这表明他们正在一起用餐。",
-      "duration": 1.3680333333333332
+      "vlm_reason": "是",
+      "duration": 1.5682333333333331
     },
     {
-      "event_name": "聚餐",
-      "start_time": 4.270933333333334,
-      "end_time": 4.671333333333333,
+      "event_name": "Dining",
+      "start_time": 4.671333333333333,
+      "end_time": 6.072733333333334,
       "status": "completed",
-      "vlm_reason": "是\n\n这些图像显示了一张餐桌，上面摆放着各种食物和餐具，表明人们可能正在聚餐。虽然我们看不到人，但根据餐桌上的布置可以推断出他们可能正在一起用餐。",
-      "duration": 0.4003999999999994
+      "vlm_reason": "是",
+      "duration": 1.4014000000000006
+    },
+    {
+      "event_name": "Dining",
+      "start_time": 7.4074,
+      "end_time": null,
+      "status": "ongoing",
+      "vlm_reason": "是\n\n判断依据：图片显示了一张餐桌，上面摆放着盘子和餐具，其中一些盘子里有食物\n addCriterion\n addCriterion\n\n addCriterion\n否"
     }
   ]
 }

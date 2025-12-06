@@ -1,92 +1,168 @@
-# 事件检测配置文件
+# Event Detection Configuration (English Version)
 
-# 模型路径配置
+# Model Paths
 models:
   vlm_path: "/data2/pyh/model_weights/qwen25vl_7b"
-  yolo_model: "yolov8s-worldv2"  # 会自动下载到 ./models/
-  clip_model: "ViT-B/32"  # 可选: ViT-B/32, ViT-B/16, ViT-L/14, RN50, RN101
-  
-# 视频处理配置
-video:
-  base_fps: 5           # 基础帧率
-  active_fps: 10        # 检测到实体时的帧率
-  no_detection_frames: 20  # 连续N帧未检测到则降回base_fps
-  
-# 事件检测配置
-detection:
-  clip_consecutive_frames: 5  # CLIP连续N帧高分才触发
-  event_start_frames: 3       # 连续N帧确认事件开始
-  event_end_frames: 10        # 连续N帧低分确认事件结束
-  
-# 切图策略配置
-cropping:
-  interaction_expand: 1.1   # 互动类事件框扩展比例
-  single_expand: 1.2        # 单人动作框扩展比例
-  scene_expand: 1.3         # 场景类事件框扩展比例
+  yolo_model: "yolov8s-worldv2"
+  clip_model: "ViT-B/32"
 
-# VLM 线程池配置
+# Video Processing
+video:
+  base_fps: 5
+  active_fps: 10
+  no_detection_frames: 20
+
+# Detection Thresholds
+detection:
+  clip_consecutive_frames: 5
+  event_start_frames: 3
+  event_end_frames: 20
+
+# Cropping Strategy
+cropping:
+  interaction_expand: 1.1
+  single_expand: 1.2
+  scene_expand: 1.3
+
+# VLM Worker Pool
 vlm:
   max_workers: 3
   queue_size: 50
 
-# 输出配置
+# Output Settings
 output:
   save_json: true
   json_path: "./detection_results.json"
   save_event_images: true
   event_images_dir: "./event_images"
-  
-  # 详细记录配置
   detailed_logging: true
-  output_base_dir: "./output"  # 基础输出目录
-  save_yolo_detections: true   # 保存YOLO检测结果图像
-  save_clip_scores: true        # 保存CLIP相似度得分
-  save_vlm_results: true        # 保存VLM验证结果
-  yolo_sample_rate: 30          # YOLO检测图像采样率（每N帧保存一次）
-  clip_sample_rate: 10          # CLIP得分采样率（每N帧保存一次）
+  output_base_dir: "./output"
+  save_yolo_detections: true
+  save_clip_scores: true
+  save_vlm_results: true
+  yolo_sample_rate: 30
+  clip_sample_rate: 10
 
-# 事件类型定义
+# Event Definitions
 events:
-  - name: "进门出门"
-    type: "location"  # location: 位置关系, interaction: 互动, scene: 场景, single: 单人动作
+  # --- Location Events ---
+  - name: "Entering Exiting"
+    type: "location"
     entities:
       - "person"
       - "door"
-    positive_desc: "一个人正在穿过门口"
+    positive_desc: "A person walking through a doorway, entering or exiting a room"
     negative_descs:
-      - "一个人站在门边不动"
-      - "一扇关闭的门"
-      - "空荡荡的门口"
-    
-  - name: "逗猫"
+      - "A person standing still near a door"
+      - "A closed door with no one"
+      - "An empty doorway"
+
+  # --- Interaction Events ---
+  - name: "Petting Cat"
     type: "interaction"
     entities:
       - "person"
       - "cat"
-    positive_desc: "一个人正在与猫互动玩耍"
+    positive_desc: "A person petting, touching, or playing with a cat"
     negative_descs:
-      - "一个人只是看着猫"
-      - "猫独自待着"
-      - "人和猫在同一空间但没有互动"
-      
-  - name: "聚餐"
+      - "A person just looking at a cat"
+      - "A cat sitting alone"
+      - "A person and a cat in the same room but not interacting"
+
+  - name: "Petting Animal"
+    type: "interaction"
+    entities:
+      - "person"
+      - "dog"
+      - "animal"
+    positive_desc: "A person petting or touching an animal (like a dog)"
+    negative_descs:
+      - "A person standing near an animal without touching"
+      - "An animal running alone"
+
+  - name: "Carrying Baby"
+    type: "interaction"
+    entities:
+      - "person"
+    positive_desc: "A person holding or carrying a baby in their arms"
+    negative_descs:
+      - "A person walking next to a stroller"
+      - "A baby lying alone"
+      - "A person holding a bag"
+
+  - name: "Walking Dog"
+    type: "interaction"
+    entities:
+      - "person"
+      - "dog"
+    positive_desc: "A person walking a dog on a leash"
+    negative_descs:
+      - "A dog running loose"
+      - "A person and a dog standing still"
+      - "A person carrying a dog"
+
+  # --- Single Action Events ---
+  - name: "Falling"
+    type: "single"
+    entities:
+      - "person"
+    positive_desc: "A person falling down, lying on the floor, or tripping"
+    negative_descs:
+      - "A person standing normally"
+      - "A person walking normally"
+      - "A person sitting on a chair"
+      - "A person squatting"
+
+  - name: "Baby Crawling"
+    type: "single"
+    entities:
+      - "person"
+    positive_desc: "A baby crawling on hands and knees on the floor"
+    negative_descs:
+      - "A baby lying still"
+      - "A baby sitting"
+      - "A person walking"
+
+  - name: "Clapping"
+    type: "single"
+    entities:
+      - "person"
+    positive_desc: "A person clapping their hands"
+    negative_descs:
+      - "A person waving hands"
+      - "A person with hands down"
+      - "A person raising hands"
+
+  - name: "Waving"
+    type: "single"
+    entities:
+      - "person"
+    positive_desc: "A person waving their hand to say hello or goodbye"
+    negative_descs:
+      - "A person clapping"
+      - "A person touching their head"
+      - "A person with hands by their side"
+
+  # --- Scene Events ---
+  - name: "Dining"
     type: "scene"
     entities:
       - "person"
       - "dining table"
       - "food"
-    positive_desc: "人们围坐在餐桌旁一起用餐"
+    positive_desc: "A group of people sitting around a dining table eating food"
     negative_descs:
-      - "人们坐在桌边但没有食物"
-      - "空的餐桌"
-      - "一个人独自坐在桌边玩手机"
-      
-  - name: "跌倒"
-    type: "single"
+      - "People sitting at a table with no food"
+      - "An empty dining table"
+      - "A person sitting alone looking at a phone"
+
+  - name: "Eating Cake"
+    type: "scene"
     entities:
       - "person"
-    positive_desc: "一个人跌倒在地上"
+      - "cake"
+      - "food"
+    positive_desc: "A person eating cake"
     negative_descs:
-      - "一个人正常站立"
-      - "一个人正常走路"
-      - "一个人坐着或蹲着"
+      - "A cake on a table with no one eating"
+      - "A person just looking at a cake"
